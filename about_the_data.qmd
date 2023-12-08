@@ -1,0 +1,198 @@
+---
+title: "About the Data"
+---
+
+## Data Exploration:
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE,include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+suppressMessages(source("raw_data.R"))
+
+```
+
+**What are the data dimensions?**
+
+```{r, echo=FALSE, warning=FALSE}
+dum<-dim(merged_data)
+cat("There are 19 columns and 15674 observations.")
+```
+
+**How many families reported their data?**
+
+```{r, echo=FALSE, warning=FALSE}
+#Filtered HHMEM==1 
+one_person_households <- merged_data %>%
+  filter(n_hhmem == 1)
+count_one_person_households <- nrow(one_person_households)
+
+cat("There are", count_one_person_households, "reported households that have 1 person.")
+```
+
+**What is the average household size?**
+
+```{r, echo=FALSE, warning=FALSE}
+
+household <- merged_data %>%
+  group_by(hhid_a) %>%
+  summarize(max_n_hnmem = max(n_hhmem, na.rm = TRUE))
+average_max_n_hnmem <- mean(household$max_n_hnmem, na.rm = TRUE)
+cat("There average house hold size is", average_max_n_hnmem,"people.")
+
+```
+
+**What is the youngest age?**
+
+```{r, echo=FALSE, warning=FALSE}
+min_age<-min(merged_data$age_yrs, na.rm = TRUE)
+cat("The youngest person in the dataset is", min_age, "years old.")
+```
+
+**What is the oldest age?**
+
+```{r, echo=FALSE, warning=FALSE}
+max_age<-max(merged_data$age_yrs, na.rm = TRUE)
+cat("The oldest person in the dataset is", max_age, "years old.")
+```
+
+The gender distribution indicates that 43.3% of respondents identify as female, 52.4% as male, and 4.3% did not provide a response.
+
+**What is the race distribution?**
+
+```{r, echo=FALSE, warning=FALSE}
+
+
+
+category_counts <- merged_data %>%
+  filter(!is.na(race_nofa)) %>%
+  group_by(race_nofa) %>%
+  summarise(count = n())
+total <- sum(category_counts$count)
+
+category_counts <- category_counts %>%
+  mutate(proportion = (count / total) * 100)
+
+pie_chart <- plot_ly(category_counts, labels = ~factor(race_nofa), values = ~proportion, type = 'pie', hole = 0.6) %>%
+  layout(title = "Proportion of Races", showlegend = TRUE)
+pie_chart
+
+```
+
+For those who reported their race, 48% of the surveyed individuals are White. Similarly, 44.8% of the survey individuals are Black. About 3.7% of the data are represented by other racial groups.
+
+**What is the gender distribution?**
+
+```{r, echo=FALSE, warning=FALSE}
+
+# Assuming 'merged_data' is your data frame
+merged_data$male <- as.factor(merged_data$male)
+gender_counts <- table(merged_data$male)
+gender_counts_df <- as.data.frame(gender_counts)
+names(gender_counts_df) <- c("Gender", "Count")
+
+library(ggplot2)
+
+ggplot(gender_counts_df, aes(x = Gender, y = Count / sum(Count), fill = Gender)) +
+  geom_col(color = "black") +
+  geom_text(aes(label = scales::percent(Count / sum(Count), accuracy = 0.1)),
+            position = position_stack(vjust = 0.5), size = 4, color = "black") +
+  labs(title = "Distribution of Gender", x = "Gender", y = "Proportion") +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold"),
+    plot.title = element_text(size = 16, face = "bold")
+  ) +
+  scale_fill_manual(values = c("lightgreen", "#fc8d62"), labels = c("Female", "Male")) +
+  scale_x_discrete(labels = c("Female", "Male")) +
+  labs(fill = "Legend")
+
+```
+
+Among individuals who provided information about their gender, approximately 54% identified as male, while 45.3% identified as female.
+
+**What is the distribution of sexual orientation?**
+
+```{r, echo=FALSE, warning=FALSE}
+
+# Assuming 'merged_data' is your data frame
+merged_data$straight <- as.factor(merged_data$straight)
+merged_data$gay <- as.factor(merged_data$gay)
+merged_data$bisexual <- as.factor(merged_data$bisexual)
+
+sexual_orientation_percentages <- data.frame(
+  SexualOrientation = c("Straight", "Gay", "Bisexual"),
+  Percentage = c(
+    sum(merged_data$straight == "Yes", na.rm = TRUE) / nrow(merged_data) * 100,
+    sum(merged_data$gay == "Yes", na.rm = TRUE) / nrow(merged_data) * 100,
+    sum(merged_data$bisexual == "Yes", na.rm = TRUE) / nrow(merged_data) * 100
+  )
+)
+
+library(ggplot2)
+
+# Reorder the bars from highest to lowest percentage
+sexual_orientation_percentages$SexualOrientation <- factor(sexual_orientation_percentages$SexualOrientation,
+                                                            levels = sexual_orientation_percentages$SexualOrientation[order(-sexual_orientation_percentages$Percentage)])
+
+ggplot(sexual_orientation_percentages, aes(x = SexualOrientation, y = Percentage, fill = SexualOrientation)) +
+  geom_col(color = "black") +
+  geom_text(aes(label = paste0(round(Percentage, 1), "%")),
+            position = position_stack(vjust = 0.5), size = 4, color = "black") +
+  labs(title = "Percentage Distribution of Sexual Orientation", x = "Sexual Orientation", y = "Percentage") +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14, face = "bold"),
+    plot.title = element_text(size = 16, face = "bold")
+  ) +
+  scale_fill_manual(values = c("#66c2a5", "#fc8d62", "#8da0cb"),
+                    labels = c("Straight", "Gay", "Bisexual")) +
+  labs(fill = "Legend")
+
+```
+
+Among those who disclosed their sexual orientation, 61% identified as straight, 2.1% as gay, and 1.9% as bisexual.
+
+**What is the proportion of substance type?**
+
+```{r, echo=FALSE, warning=FALSE}
+merged_data$subsAbuse_type <- as.factor(merged_data$subsAbuse_type)
+
+merged_data_filtered <- merged_data[!is.na(merged_data$subsAbuse_type), ]
+
+subsAbuse_percentages <- prop.table(table(merged_data_filtered$subsAbuse_type)) * 100
+
+subsAbuse_df <- as.data.frame(subsAbuse_percentages)
+names(subsAbuse_df) <- c("SubstanceAbuse", "Percentage")
+
+subsAbuse_df <- subsAbuse_df[order(-subsAbuse_df$Percentage), ]
+
+ggplot(subsAbuse_df, aes(x = reorder(SubstanceAbuse, -Percentage), y = Percentage, fill = SubstanceAbuse)) +
+  geom_col(color = "black") +
+  geom_text(aes(label = paste0(round(Percentage, 1), "%")),
+            position = position_stack(vjust = 0.5), size = 4, color = "black") +
+  labs(title = "Percentage Distribution of Substance Abuse Types", x = "Substance Abuse Type", y = "Percentage") +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14, face = "bold"), plot.title = element_text(size = 16, face = "bold")) +
+  scale_fill_manual(values = c("lightgreen", "#8da0cb", "darkgrey", "#fc8d62", "lightyellow"),
+                    labels = levels(merged_data_filtered$subsAbuse_type)) +
+  labs(fill = "Legend")
+
+
+```
+
+Approximately 79.8% of the individuals surveyed indicated that they refrain from substance abuse. About 8.4% reported engaging in the abuse of both drugs and alcohol, while 4.6% experience alcohol abuse and 7.2% experience drug abuse.
+
+```{r}
+
+
+
+
+
+
+
+
+```

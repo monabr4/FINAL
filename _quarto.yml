@@ -1,0 +1,33 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Home"
+  navbar:
+    left:
+      - href: index.qmd
+        text: "Research Question"
+      - href: about_the_data.qmd
+        text: "About the Data"
+      - href: domestic_violence.qmd
+        text: "Domestic Violence"
+      - href: substance_abuse.qmd
+        text: "Substance Abuse"
+     # -href:____.pdf
+      #text:"Project PDF
+        
+
+
+format:
+  html:
+    theme: "flatly"
+    css: "styles.css"
+    toc: true
+    highlight: "tomorrow-night"
+
+
+output:
+  self_contained: true
+
+editor: "visual"
